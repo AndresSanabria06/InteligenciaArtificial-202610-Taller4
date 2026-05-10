@@ -138,7 +138,22 @@ def forwardBFS(problem: Problem) -> list[Action]:
          avoid revisiting the same state twice (graph search, not tree search).
     """
     ### Your code here ###
-
+    estado_inicial = problem.getStartState()
+    if problem.isGoalState(estado_inicial):
+        return []
+    cola_por_revisar = [(estado_inicial, [])]
+    ya_visitados = {estado_inicial}
+    while len(cola_por_revisar) > 0:
+        state, plan = cola_por_revisar.pop(0)
+        sucesores = problem.getSuccessors(state)
+        for next_state, action, cost in sucesores:
+            if next_state not in ya_visitados:
+                ya_visitados.add(next_state)
+                plan_nuevo= plan + [action]
+                if problem.isGoalState(next_state):
+                    return plan_nuevo
+                cola_por_revisar.append((next_state, plan_nuevo))
+    return []
     ### End of your code ###
 
 
