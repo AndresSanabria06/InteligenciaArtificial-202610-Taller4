@@ -73,7 +73,17 @@ PICKUP: ActionSchema = ActionSchema(
 # ---------------------------------------------------------------------------
 
 ### Your code here ###
-PUTDOWN: ActionSchema = None
+PUTDOWN: ActionSchema = ActionSchema(
+    name = "PutDown",
+    parameters = ["r", "obj", "loc"],
+    precond_pos= [
+        ("At", "r", "loc"),
+        ("Holding", "r", "obj"),],
+    precond_neg = [],
+    add_list = [
+        ("At", "obj", "loc"),
+        ("HandsFree", "r"),],
+    del_list = [("Holding", "r", "obj"),],)
 ### End of your code ###
 
 
