@@ -122,9 +122,8 @@ SETUP_SUPPLIES: ActionSchema = ActionSchema(
     parameters = ["r", "s", "loc"],
     precond_pos = [
         ("At", "r", "loc"),
-        ("At","s", "loc"),
-        ("Holding", "r", "s"),
-        ("MedicalPost", "loc"),],
+        ("MedicalPost", "loc"),
+        ("Holding", "r", "s"),],
     precond_neg = [],
     add_list = [
         ("SuppliesReady", "loc"),
