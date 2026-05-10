@@ -172,7 +172,9 @@ def is_applicable(state: State, action: Action) -> bool:
     Tip: frozenset supports the .issubset() method and the .isdisjoint() method.
     """
     ### Your code here ###
-    return False
+    revise_pos = action.precond_pos.issubset(state)
+    revise_neg = action.precond_neg.isdisjoint(state)
+    return revise_pos and revise_neg
     ### End of your code ###
 
 
