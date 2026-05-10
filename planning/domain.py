@@ -50,7 +50,19 @@ MOVE: ActionSchema = ActionSchema(
 # ---------------------------------------------------------------------------
 
 ### Your code here ###
-PICKUP: ActionSchema = None
+PICKUP: ActionSchema = ActionSchema(
+    name="PickUp",
+    parameters=["r", "obj", "loc"],
+    precond_pos=[
+        ("At", "r", "loc"),
+        ("At", "obj", "loc"),
+        ("HandsFree", "r"),
+        ("Pickable", "obj"),],
+    precond_neg=[],
+    add_list=[("Holding", "r", "obj"),],
+    del_list=[
+        ("At", "obj", "loc"),
+        ("HandsFree", "r"), ],)
 ### End of your code ###
 
 
