@@ -245,5 +245,10 @@ def get_applicable_actions(
          Or use get_all_groundings() and filter the results by applicability.
     """
     ### Your code here ###
-    return []
+    all_actions_complete = get_all_groundings(domain, objects)
+    applicable_actions = []
+    for action in all_actions_complete:
+        if is_applicable(state, action):
+            applicable_actions.append(action)
+    return applicable_actions
     ### End of your code ###
