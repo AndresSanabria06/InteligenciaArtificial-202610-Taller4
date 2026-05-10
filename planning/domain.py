@@ -117,7 +117,20 @@ RESCUE: ActionSchema = ActionSchema(
 # ---------------------------------------------------------------------------
 
 ### Your code here ###
-SETUP_SUPPLIES: ActionSchema = None
+SETUP_SUPPLIES: ActionSchema = ActionSchema(
+    name = "SetupSupplies",
+    parameters = ["r", "s", "loc"],
+    precond_pos = [
+        ("At", "r", "loc"),
+        ("At","s", "loc"),
+        ("Holding", "r", "s"),
+        ("MedicalPost", "loc"),],
+    precond_neg = [],
+    add_list = [
+        ("SuppliesReady", "loc"),
+        ("HandsFree", "r"),],
+    del_list = [
+        ("Holding", "r", "s"),])
 ### End of your code ###
 
 
