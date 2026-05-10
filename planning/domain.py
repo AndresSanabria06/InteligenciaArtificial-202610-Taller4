@@ -94,7 +94,17 @@ PUTDOWN: ActionSchema = ActionSchema(
 # ---------------------------------------------------------------------------
 
 ### Your code here ###
-RESCUE: ActionSchema = None
+RESCUE: ActionSchema = ActionSchema(
+    name= "Rescue",
+    parameters=["r", "p", "loc"],
+    precond_pos= [
+        ("At", "r", "loc"),
+        ("At", "p", "loc"),
+        ("MedicalPost", "loc"),
+        ("SuppliesReady", "loc"),],
+    precond_neg=[],
+    add_list= [("Rescued", "p"),],
+    del_list = [("At", "p", "loc"),],)
 ### End of your code ###
 
 
