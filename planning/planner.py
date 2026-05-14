@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from collections import deque
 from collections.abc import Callable
 
 from planning.pddl import (
@@ -178,9 +178,18 @@ def regress(goal_set: State, action: Action) -> State | None:
     Tip: Use frozenset operations: intersection (&), difference (-), union (|).
          Check relevance first, then check for contradictions, then compute.
     """
-    ### Your code here ###
+    if not (action.add_list & goal_set):
+        return None
 
-    ### End of your code ###
+    if action.del_list & goal_set:
+        return None
+
+    new_goal = (goal_set - action.add_list) | action.precond_pos
+
+    if action.precond_neg & new_goal:
+        return None
+
+    return new_goal
 
 
 def backwardSearch(problem: Problem) -> list[Action]:
@@ -201,10 +210,38 @@ def backwardSearch(problem: Problem) -> list[Action]:
          Skip subgoals that contain static predicates (MedicalPost, Adjacent,
          Pickable) that are false in the initial state — these are dead ends.
     """
-    ### Your code here ###
+    
+    initial_state = problem.getStartState()
+    goal = problem.goal
 
-    ### End of your code ###
+    if goal.issubset(initial_state):
+        return []
 
+    all_actions = get_all_groundings(problem.domain, problem.objects)
+
+    frontier = deque([(goal, [])])
+
+    visited = {goal}
+
+    while frontier:
+
+        current_goal, plan = frontier.popleft()
+
+        if current_goal.issubset(initial_state):
+            return plan
+
+        for action in all_actions:
+            new_goal = regress(current_goal, action)
+
+            if new_goal is None:
+                continue
+
+            if new_goal not in visited:
+                visited.add(new_goal)
+                new_plan = [action] + plan
+                frontier.append((new_goal, new_plan))
+
+    return []
 
 # ---------------------------------------------------------------------------
 # Punto 4 – A* Planner
@@ -230,10 +267,34 @@ def aStarPlanner(
          Use PriorityQueue with priority = g + h(next_state).
          Track the best g-cost seen for each state to avoid stale expansions.
     """
-    ### Your code here ###
+    initial_state = problem.getStartState()
+    if problem.isGoalState(initial_state):
+        return []
 
-    ### End of your code ###
+    frontier = PriorityQueue()
+    h0 = heuristic(initial_state, problem.goal, problem.domain, problem.objects)
+    frontier.push((initial_state, [], 0), h0)
 
+    best_g = {initial_state: 0}
+
+    while not frontier.isEmpty():
+        state, plan, g = frontier.pop()
+
+        if problem.isGoalState(state):
+            return plan
+
+        if g > best_g.get(state, float('inf')):
+            continue
+
+        for next_state, action, cost in problem.getSuccessors(state):
+            new_g = g + cost
+            if new_g < best_g.get(next_state, float('inf')):
+                best_g[next_state] = new_g
+                h = heuristic(next_state, problem.goal, problem.domain, problem.objects)
+                new_plan = plan + [action]
+                frontier.push((next_state, new_plan, new_g), new_g + h)
+
+    return []
 
 # Aliases used by the command-line argument parser
 tinyBaseSearch = tinyBaseSearch

@@ -204,6 +204,8 @@ def get_all_groundings(domain: list[ActionSchema], objects: Objects) -> list[Act
         "loc": objects["cells"],
         "from_cell": objects["cells"],
         "to_cell": objects["cells"],
+        "from": objects["cells"],    
+        "to": objects["cells"],       
         "obj": objects["objects"],
         "s": objects["supplies"],
         "p": objects["patients"],

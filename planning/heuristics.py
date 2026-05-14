@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from planning.pddl import ActionSchema, State, Objects
-
+from planning.pddl import ActionSchema, State, Objects, get_all_groundings
+from planning.pddl import is_applicable
 
 def nullHeuristic(
     state: State,
@@ -44,9 +44,24 @@ def ignorePreconditionsHeuristic(
          with the initial state, or generate all groundings regardless of state).
          Remember: with no preconditions, every grounding is "applicable".
     """
-    ### Your code here ###
+    unsatisfied = goal - state
+    if not unsatisfied:
+        return 0
 
-    ### End of your code ###
+    all_actions = get_all_groundings(domain, objects)
+
+    count = 0
+    while unsatisfied:
+        best_action = max(all_actions, key=lambda a: len(a.add_list & unsatisfied))
+
+        covered = best_action.add_list & unsatisfied
+        if not covered:
+            return float('inf')
+
+        unsatisfied -= covered
+        count += 1
+
+    return count
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +93,30 @@ def ignoreDeleteListsHeuristic(
          Use get_applicable_actions to enumerate applicable grounded actions at
          each step (preconditions still apply in the relaxed model).
     """
-    ### Your code here ###
+    relaxed_state = set(state)
+    count = 0
+    max_steps = 1000  
+    while not goal.issubset(frozenset(relaxed_state)):
+        unsatisfied = goal - frozenset(relaxed_state)
 
-    ### End of your code ###
+        all_actions = get_all_groundings(domain, objects)
+        applicable = [
+            a for a in all_actions
+            if is_applicable(frozenset(relaxed_state), a)
+        ]
+
+        if not applicable:
+            return float('inf')
+
+        best = max(applicable, key=lambda a: len(a.add_list & unsatisfied))
+
+        if not (best.add_list & unsatisfied):
+            return float('inf')
+
+        relaxed_state |= best.add_list
+
+        count += 1
+        if count >= max_steps:
+            return float('inf')
+
+    return count
