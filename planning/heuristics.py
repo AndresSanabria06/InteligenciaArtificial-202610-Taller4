@@ -93,30 +93,32 @@ def ignoreDeleteListsHeuristic(
          Use get_applicable_actions to enumerate applicable grounded actions at
          each step (preconditions still apply in the relaxed model).
     """
-    relaxed_state = set(state)
-    count = 0
-    max_steps = 1000  
-    while not goal.issubset(frozenset(relaxed_state)):
-        unsatisfied = goal - frozenset(relaxed_state)
+    if goal.issubset(state):
+        return 0.0
 
-        all_actions = get_all_groundings(domain, objects)
-        applicable = [
-            a for a in all_actions
-            if is_applicable(frozenset(relaxed_state), a)
-        ]
+    all_grounded_actions = get_all_groundings(domain, objects)
+    relaxed_state = state
+    steps = 0
 
-        if not applicable:
-            return float('inf')
+    while True:
+        unsatisfied = goal - relaxed_state
+        if not unsatisfied:
+            return float(steps)
 
-        best = max(applicable, key=lambda a: len(a.add_list & unsatisfied))
+        best_cover = 0
+        best_action = None
 
-        if not (best.add_list & unsatisfied):
-            return float('inf')
+        for action in all_grounded_actions:
+            if action.precond_pos.issubset(relaxed_state) and action.precond_neg.isdisjoint(
+                relaxed_state
+            ):
+                cover = len(action.add_list & unsatisfied)
+                if cover > best_cover:
+                    best_cover = cover
+                    best_action = action
 
-        relaxed_state |= best.add_list
+        if best_cover == 0 or best_action is None:
+            return float("inf")
 
-        count += 1
-        if count >= max_steps:
-            return float('inf')
-
-    return count
+        relaxed_state = relaxed_state | best_action.add_list
+        steps += 1
