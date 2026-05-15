@@ -1,7 +1,7 @@
 from __future__ import annotations
-from collections import deque
+from collections import *
 from collections.abc import Callable
-
+import time
 from planning.pddl import (
     Action,
     ActionSchema,
@@ -178,18 +178,23 @@ def regress(goal_set: State, action: Action) -> State | None:
     Tip: Use frozenset operations: intersection (&), difference (-), union (|).
          Check relevance first, then check for contradictions, then compute.
     """
-    if not (action.add_list & goal_set):
+    star_time = time.time()
+
+    goal_set = frozenset(goal_set)
+
+    add_effects = frozenset(action.add_list)
+    del_effects = frozenset(action.del_list)
+    preconditions = frozenset(action.precond_pos)
+
+    if not (add_effects & goal_set):
         return None
 
-    if action.del_list & goal_set:
+    if del_effects & goal_set:
         return None
 
-    new_goal = (goal_set - action.add_list) | action.precond_pos
+    regressed_goal = (goal_set - add_effects) | preconditions
 
-    if action.precond_neg & new_goal:
-        return None
-
-    return new_goal
+    return frozenset(regressed_goal)
 
 
 def backwardSearch(problem: Problem) -> list[Action]:
@@ -211,35 +216,65 @@ def backwardSearch(problem: Problem) -> list[Action]:
          Pickable) that are false in the initial state — these are dead ends.
     """
     
-    initial_state = problem.getStartState()
-    goal = problem.goal
-
+    start_time = time.time()
+    initial_state = frozenset(problem.initial_state)
+    goal = frozenset(problem.goal)
     if goal.issubset(initial_state):
         return []
 
     all_actions = get_all_groundings(problem.domain, problem.objects)
+    actions_by_fluent = {}
+    for action in all_actions:
+        for fluent in action.add_list:
+            actions_by_fluent.setdefault(fluent, []).append(action)
 
-    frontier = deque([(goal, [])])
-
+    static_predicates = {"MedicalPost", "Adjacent", "Pickable", "Free"}
+    
+    queue = Queue()
+    queue.push((goal, []))
     visited = {goal}
+    
 
-    while frontier:
+    while not queue.isEmpty():
+        current_goal, plan = queue.pop()
+        problem._expanded += 1
 
-        current_goal, plan = frontier.popleft()
+        locations = {}
+        impossible = False
+        for fluent in current_goal:
+            if fluent[0] == "At":
+                obj, loc = fluent[1], fluent[2]
+                if obj in locations and locations[obj] != loc:
+                    impossible = True
+                    break
+                locations[obj] = loc
+        
+        if impossible:
+            continue
 
-        if current_goal.issubset(initial_state):
-            return plan
+        relevant_actions = set()
+        for fluent in current_goal:
+            if fluent in actions_by_fluent:
+                relevant_actions.update(actions_by_fluent[fluent])
 
-        for action in all_actions:
-            new_goal = regress(current_goal, action)
+        for action in relevant_actions:
+            regressed = regress(current_goal, action)
 
-            if new_goal is None:
+            if regressed is None:
                 continue
 
-            if new_goal not in visited:
-                visited.add(new_goal)
-                new_plan = [action] + plan
-                frontier.append((new_goal, new_plan))
+            if any(f[0] in static_predicates and f not in initial_state for f in regressed):
+                continue
+
+            if regressed.issubset(initial_state):
+                print("Backward Search")
+                print("Expanded goals:", problem._expanded)
+                print("Plan length:", len([action] + plan))
+                return [action] + plan
+
+            if regressed not in visited:
+                visited.add(regressed)
+                queue.push((regressed, [action] + plan))
 
     return []
 
