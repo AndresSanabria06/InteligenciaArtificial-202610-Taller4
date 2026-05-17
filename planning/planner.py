@@ -178,8 +178,7 @@ def regress(goal_set: State, action: Action) -> State | None:
     Tip: Use frozenset operations: intersection (&), difference (-), union (|).
          Check relevance first, then check for contradictions, then compute.
     """
-    star_time = time.time()
-
+    ### Your code here ###
     goal_set = frozenset(goal_set)
 
     add_effects = frozenset(action.add_list)
@@ -195,6 +194,9 @@ def regress(goal_set: State, action: Action) -> State | None:
     regressed_goal = (goal_set - add_effects) | preconditions
 
     return frozenset(regressed_goal)
+
+    ### End of your code ###
+
 
 
 def backwardSearch(problem: Problem) -> list[Action]:
@@ -215,8 +217,7 @@ def backwardSearch(problem: Problem) -> list[Action]:
          Skip subgoals that contain static predicates (MedicalPost, Adjacent,
          Pickable) that are false in the initial state — these are dead ends.
     """
-    
-    start_time = time.time()
+    ### Your code here ###
     initial_state = frozenset(problem.initial_state)
     goal = frozenset(problem.goal)
     if goal.issubset(initial_state):
@@ -278,6 +279,8 @@ def backwardSearch(problem: Problem) -> list[Action]:
 
     return []
 
+    ### End of your code ###
+    
 # ---------------------------------------------------------------------------
 # Punto 4 – A* Planner
 # ---------------------------------------------------------------------------
