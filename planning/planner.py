@@ -179,21 +179,21 @@ def regress(goal_set: State, action: Action) -> State | None:
          Check relevance first, then check for contradictions, then compute.
     """
     ### Your code here ###
-    goal_set = frozenset(goal_set)
+    objetivo = frozenset(goal_set)
 
-    add_effects = frozenset(action.add_list)
-    del_effects = frozenset(action.del_list)
-    preconditions = frozenset(action.precond_pos)
+    efectos_agregados = frozenset(action.add_list)
+    efectos_eliminados = frozenset(action.del_list)
+    precondiciones = frozenset(action.precond_pos)
 
-    if not (add_effects & goal_set):
+    if not (efectos_agregados & objetivo):
         return None
 
-    if del_effects & goal_set:
+    if efectos_eliminados & objetivo:
         return None
 
-    regressed_goal = (goal_set - add_effects) | preconditions
+    objetivo_regresado = ((objetivo - efectos_agregados)| precondiciones)
 
-    return frozenset(regressed_goal)
+    return frozenset(objetivo_regresado)
 
     ### End of your code ###
 
@@ -218,64 +218,81 @@ def backwardSearch(problem: Problem) -> list[Action]:
          Pickable) that are false in the initial state — these are dead ends.
     """
     ### Your code here ###
-    initial_state = frozenset(problem.initial_state)
-    goal = frozenset(problem.goal)
-    if goal.issubset(initial_state):
+    estado_inicial = frozenset(problem.initial_state)
+    objetivo = frozenset(problem.goal)
+
+    if objetivo.issubset(estado_inicial):
         return []
 
-    all_actions = get_all_groundings(problem.domain, problem.objects)
-    actions_by_fluent = {}
-    for action in all_actions:
-        for fluent in action.add_list:
-            actions_by_fluent.setdefault(fluent, []).append(action)
+    todas_las_acciones = get_all_groundings(problem.domain, problem.objects)
 
-    static_predicates = {"MedicalPost", "Adjacent", "Pickable", "Free"}
-    
-    queue = Queue()
-    queue.push((goal, []))
-    visited = {goal}
-    
+    acciones_por_condicion = {}
 
-    while not queue.isEmpty():
-        current_goal, plan = queue.pop()
+    for accion in todas_las_acciones:
+        for condicion in accion.add_list:
+            acciones_por_condicion.setdefault(condicion, []).append(accion)
+
+    predicados_estaticos = {
+        "MedicalPost",
+        "Adjacent",
+        "Pickable",
+        "Free"
+    }
+
+    cola = Queue()
+    cola.push((objetivo, []))
+
+    visitados = {objetivo}
+
+    while not cola.isEmpty():
+        objetivo_actual, plan = cola.pop()
         problem._expanded += 1
+        posiciones = {}
+        no_se_puede = False
 
-        locations = {}
-        impossible = False
-        for fluent in current_goal:
-            if fluent[0] == "At":
-                obj, loc = fluent[1], fluent[2]
-                if obj in locations and locations[obj] != loc:
-                    impossible = True
+        for condicion in objetivo_actual:
+            if condicion[0] == "At":
+
+                objeto = condicion[1]
+                posicion = condicion[2]
+
+                if objeto in posiciones and posiciones[objeto] != posicion:
+
+                    no_se_puede = True
                     break
-                locations[obj] = loc
-        
-        if impossible:
+
+                posiciones[objeto] = posicion
+
+        if no_se_puede:
             continue
 
-        relevant_actions = set()
-        for fluent in current_goal:
-            if fluent in actions_by_fluent:
-                relevant_actions.update(actions_by_fluent[fluent])
+        acciones_relevantes = set()
 
-        for action in relevant_actions:
-            regressed = regress(current_goal, action)
+        for condicion in objetivo_actual:
+            if condicion in acciones_por_condicion:
+                acciones_relevantes.update(
+                    acciones_por_condicion[condicion]
+                )
 
-            if regressed is None:
+        for accion in acciones_relevantes:
+            regresion = regress(objetivo_actual, accion)
+
+            if regresion is None:
                 continue
 
-            if any(f[0] in static_predicates and f not in initial_state for f in regressed):
+            if any(
+                f[0] in predicados_estaticos
+                and f not in estado_inicial
+                for f in regresion
+            ):
                 continue
 
-            if regressed.issubset(initial_state):
-                print("Backward Search")
-                print("Expanded goals:", problem._expanded)
-                print("Plan length:", len([action] + plan))
-                return [action] + plan
+            if regresion.issubset(estado_inicial):
+                return [accion] + plan
 
-            if regressed not in visited:
-                visited.add(regressed)
-                queue.push((regressed, [action] + plan))
+            if regresion not in visitados:
+                visitados.add(regresion)
+                cola.push((regresion, [accion] + plan))
 
     return []
 
